@@ -2,7 +2,7 @@
 
 A new Flutter project.
 <p align="left">
-  <img src="examples/demo.jpg">
+  <img width="300" src="examples/demo.jpg">
   <br/>
 </p>
 
