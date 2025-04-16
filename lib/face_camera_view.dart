@@ -24,6 +24,7 @@ class _FaceCameraViewState extends State<FaceCameraView>
   bool _hasError = false; // 是否发生错误
   bool _isCameraInitialized = false; // 摄像头是否初始化完成
   Offset? _tapPosition; // 点击位置
+  double _catFaceOpacity = 1.0; // 猫脸图片透明度
 
   @override
   void initState() {
@@ -169,6 +170,9 @@ class _FaceCameraViewState extends State<FaceCameraView>
         // 重置动画并启动
         _animationController.reset();
         _animationController.forward();
+
+        // 启动猫脸透明度动画
+        _startCatFaceFadeOutAndRecover();
       },
       child: Stack(
         children: [
@@ -189,11 +193,36 @@ class _FaceCameraViewState extends State<FaceCameraView>
               catFaceImage: _catFaceImage, // 猫脸图片
               tapPosition: _tapPosition, // 点击位置
               animationValue: _animationController.value, // 动画值
+              catFaceOpacity: _catFaceOpacity, // 猫脸透明度
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _startCatFaceFadeOutAndRecover() {
+    setState(() {
+      _catFaceOpacity = 1.0; // 重置透明度
+    });
+
+    // 启动一个 0.5 秒的动画逐渐消失
+    Future.delayed(Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _catFaceOpacity = 0.0; // 将透明度设置为 0
+        });
+
+        // 再启动一个 3 秒的动画逐渐恢复
+        Future.delayed(Duration(milliseconds: 3000), () {
+          if (mounted) {
+            setState(() {
+              _catFaceOpacity = 1.0; // 恢复透明度
+            });
+          }
+        });
+      }
+    });
   }
 }
 
@@ -204,6 +233,7 @@ class FaceOverlayPainter extends CustomPainter {
   final ui.Image? catFaceImage; // 猫脸图片
   final Offset? tapPosition; // 点击位置
   final double animationValue; // 动画值
+  final double catFaceOpacity; // 猫脸透明度
 
   FaceOverlayPainter({
     required this.faceRects,
@@ -212,6 +242,7 @@ class FaceOverlayPainter extends CustomPainter {
     this.catFaceImage,
     this.tapPosition,
     required this.animationValue,
+    required this.catFaceOpacity, // 添加透明度参数
   });
 
   @override
@@ -242,16 +273,6 @@ class FaceOverlayPainter extends CustomPainter {
         faceRect.right * scale,
         faceRect.bottom * scale,
       );
-
-      // // 镜像逻辑
-      // if (cameraLensDirection == CameraLensDirection.front) {
-      //   scaledRect = Rect.fromLTRB(
-      //     size.width - scaledRect.right,
-      //     scaledRect.top,
-      //     size.width - scaledRect.left,
-      //     scaledRect.bottom,
-      //   );
-      // }
 
       final center = Offset(
         scaledRect.left + scaledRect.width / 2,
@@ -284,17 +305,27 @@ class FaceOverlayPainter extends CustomPainter {
       );
       canvas.drawRect(rotatedRect, paint);
 
-      final dstRect = Rect.fromCenter(
-        center: Offset(0, 0),
-        width: scaledRect.width * 1.6,
-        height: scaledRect.height * 1.6,
-      );
-      paintImage(
-        canvas: canvas,
-        rect: dstRect,
-        image: catFaceImage!,
-        fit: BoxFit.cover,
-      );
+      // 绘制猫脸图片
+      if (catFaceImage != null && catFaceOpacity > 0) {
+        final dstRect = Rect.fromCenter(
+          center: Offset(0, 0),
+          width: scaledRect.width * 1.6,
+          height: scaledRect.height * 1.6,
+        );
+
+        // 设置透明度
+        final paintWithOpacity =
+            Paint()..color = Colors.white.withOpacity(catFaceOpacity);
+
+        canvas.saveLayer(dstRect, paintWithOpacity); // 应用透明度
+        paintImage(
+          canvas: canvas,
+          rect: dstRect,
+          image: catFaceImage!,
+          fit: BoxFit.cover,
+        );
+        canvas.restore();
+      }
 
       // 恢复 Canvas 状态
       canvas.restore();
