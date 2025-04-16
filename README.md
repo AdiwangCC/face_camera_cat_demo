@@ -20,6 +20,6 @@ For help getting started with Flutter development, view the
 samples, guidance on mobile development, and a full API reference.
 
 ## Compile Command
-flutter clean
-flutter pub get
+flutter clean  
+flutter pub get  
 flutter run
