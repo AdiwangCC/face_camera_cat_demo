@@ -1,6 +1,10 @@
 # face_camera_cat_demo
 
 A new Flutter project.
+<p align="left">
+  <img src="examples/demo.jpg">
+  <br/>
+</p>
 
 ## Getting Started
 
